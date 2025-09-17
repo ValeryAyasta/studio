@@ -9,6 +9,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import type { Participant } from '@/lib/types';
+import nodemailer from 'nodemailer';
+import 'dotenv/config';
 
 const ParticipantSchema = z.object({
   id: z.string(),
@@ -24,35 +26,37 @@ const sendEmailFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (participants) => {
-    // In a real application, you would integrate with an email sending service
-    // like SendGrid, Mailgun, or AWS SES.
-    // For this example, we will just log the emails to the console
-    // to simulate that they have been sent.
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_SERVER_HOST,
+      port: Number(process.env.EMAIL_SERVER_PORT),
+      secure: Number(process.env.EMAIL_SERVER_PORT) === 465, // true for 465, false for other ports
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
-    console.log(`Simulating sending ${participants.length} emails.`);
+    console.log(`Sending ${participants.length} emails.`);
 
     const emailPromises = participants.map(participant => {
       const emailContent = `
-        To: ${participant.email}
-        Subject: Your Invitation to the Main Event!
-
-        Hello ${participant.name},
-
-        We're excited to have you at our event. Please have this unique QR code ready for a smooth check-in process.
-        Your QR code is attached (simulated).
-
-        See you there!
+        <p>Hello ${participant.name},</p>
+        <p>We're excited to have you at our event. Please have this unique QR code ready for a smooth check-in process.</p>
+        <p>Your QR code is attached (simulated).</p>
+        <p>See you there!</p>
       `;
-      console.log('--- Sending Email ---');
-      console.log(emailContent.trim());
-      console.log('---------------------');
-      // Simulate network delay
-      return new Promise(resolve => setTimeout(resolve, 50));
+
+      return transporter.sendMail({
+        from: `"AttendEasy" <${process.env.EMAIL_USER}>`,
+        to: participant.email,
+        subject: 'Your Invitation to the Main Event!',
+        html: emailContent,
+      });
     });
 
     await Promise.all(emailPromises);
 
-    console.log('All email simulations are complete.');
+    console.log('All emails have been sent.');
   }
 );
 
