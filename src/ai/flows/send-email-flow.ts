@@ -45,8 +45,7 @@ const sendEmailFlow = ai.defineFlow(
     for (const participant of participants) {
       try {
         console.log(`Sending email to ${participant.email}...`);
-        const participantJson = JSON.stringify(participant);
-        const qrCodeDataUrl = await qrcode.toDataURL(participantJson);
+        const qrCodeDataUrl = await qrcode.toDataURL(participant.id);
         
         const emailContent = `
           <p>Hello ${participant.name},</p>

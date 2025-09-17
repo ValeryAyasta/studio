@@ -1,31 +1,54 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { Mail, QrCode } from "lucide-react";
+import { Mail, QrCode, Database } from "lucide-react";
+import { collection, onSnapshot } from "firebase/firestore";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { initialParticipants } from "@/lib/participants";
 import type { Participant } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
+import { updateParticipantStatus, seedParticipants } from "@/lib/firestore";
+
 
 import { InviteTab } from "@/components/app/invite-tab";
 import { ScanTab } from "@/components/app/scan-tab";
 import { ScanConfirmation } from "@/components/app/scan-confirmation";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const [participants, setParticipants] = useState<Participant[]>(initialParticipants);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [scannedParticipant, setScannedParticipant] = useState<Participant | null>(null);
   const { toast } = useToast();
 
-  const handleScan = (participantId: string) => {
+  useEffect(() => {
+    if (!db) return;
+    const unsubscribe = onSnapshot(collection(db, "participants"), (snapshot) => {
+      const participantsData: Participant[] = [];
+      snapshot.forEach((doc) => {
+        participantsData.push({ id: doc.id, ...doc.data() } as Participant);
+      });
+      setParticipants(participantsData);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const handleScan = async (participantId: string) => {
     const participant = participants.find((p) => p.id === participantId);
     if (participant && participant.status === "Not Attended") {
-      setParticipants((prev) =>
-        prev.map((p) =>
-          p.id === participantId ? { ...p, status: "Attended" } : p
-        )
-      );
-      setScannedParticipant(participant);
+      const result = await updateParticipantStatus(participantId, "Attended");
+      if (result.success) {
+        setScannedParticipant(participant);
+      } else {
+         toast({
+          title: "Error",
+          description: "Failed to update participant status.",
+          variant: "destructive",
+        });
+      }
     } else if (participant) {
       toast({
         title: "Already Checked In",
@@ -37,6 +60,22 @@ export default function Home() {
 
   const handleCloseConfirmation = () => {
     setScannedParticipant(null);
+  };
+
+  const handleSeed = async () => {
+    const result = await seedParticipants();
+    if (result.success) {
+      toast({
+        title: "Database Seeded",
+        description: result.message,
+      });
+    } else {
+      toast({
+        title: "Error Seeding",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
   };
   
   useEffect(() => {
@@ -53,9 +92,14 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-background font-body">
       <main className="flex-1 container mx-auto p-4 md:p-8">
         <header className="text-center mb-8 md:mb-12">
-          <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary tracking-tight">
-            AttendEasy
-          </h1>
+          <div className="flex justify-center items-center gap-4 mb-4">
+             <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary tracking-tight">
+              AttendEasy
+            </h1>
+            <Button onClick={handleSeed} variant="outline" size="sm">
+              <Database className="mr-2 h-4 w-4" /> Seed Database
+            </Button>
+          </div>
           <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
             Event attendance, simplified. Send invitations with unique QR codes and track arrivals with a quick scan.
           </p>
@@ -76,7 +120,9 @@ export default function Home() {
             <InviteTab participants={participants} />
           </TabsContent>
           <TabsContent value="scan">
-            <ScanTab participants={participants} onScan={handleScan} />
+            <div style={{ display: scannedParticipant ? "none" : "block" }}>
+              <ScanTab participants={participants} onScan={handleScan} />
+            </div>
           </TabsContent>
         </Tabs>
 
