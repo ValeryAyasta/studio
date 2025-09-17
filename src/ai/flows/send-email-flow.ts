@@ -10,6 +10,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import type { Participant } from '@/lib/types';
 import nodemailer from 'nodemailer';
+import qrcode from 'qrcode';
 import 'dotenv/config';
 
 const ParticipantSchema = z.object({
@@ -41,11 +42,14 @@ const sendEmailFlow = ai.defineFlow(
 
     console.log(`Sending ${participants.length} emails.`);
 
-    const emailPromises = participants.map(participant => {
+    const emailPromises = participants.map(async (participant) => {
+      const participantJson = JSON.stringify(participant);
+      const qrCodeDataUrl = await qrcode.toDataURL(participantJson);
+      
       const emailContent = `
         <p>Hello ${participant.name},</p>
         <p>We're excited to have you at our event. Please have this unique QR code ready for a smooth check-in process.</p>
-        <p>Your QR code is attached (simulated).</p>
+        <img src="${qrCodeDataUrl}" alt="Your QR Code" />
         <p>See you there!</p>
       `;
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Mail, QrCode } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, Mail } from "lucide-react";
+import qrcode from 'qrcode';
 import type { Participant } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,17 @@ interface InviteTabProps {
 export function InviteTab({ participants }: InviteTabProps) {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const sampleParticipant = participants.find(p => p.email === 'valeryayasta@gmail.com') || participants[0];
+
+  useEffect(() => {
+    if (sampleParticipant) {
+      const participantJson = JSON.stringify(sampleParticipant);
+      qrcode.toDataURL(participantJson)
+        .then(url => setQrCodeUrl(url))
+        .catch(err => console.error("Failed to generate QR code", err));
+    }
+  }, [sampleParticipant]);
 
   const handleSendEmails = async () => {
     setIsSending(true);
@@ -53,7 +64,11 @@ export function InviteTab({ participants }: InviteTabProps) {
             <p className="text-sm">Hello {sampleParticipant.name},</p>
             <p className="mt-2 text-sm text-muted-foreground">We're excited to have you at our event. Please have this unique QR code ready for a smooth check-in process.</p>
             <div className="mt-4 flex flex-col items-center justify-center text-center p-4 bg-background rounded-md shadow-inner">
-              <QrCode className="h-24 w-24 text-primary" />
+              {qrCodeUrl ? (
+                <img src={qrCodeUrl} alt="Participant QR Code" className="h-32 w-32" />
+              ) : (
+                <div className="h-32 w-32 bg-muted-foreground/10 animate-pulse rounded-md"></div>
+              )}
               <p className="mt-2 text-xs text-muted-foreground">Your personal QR code</p>
             </div>
             <p className="mt-4 text-sm">See you there!</p>
