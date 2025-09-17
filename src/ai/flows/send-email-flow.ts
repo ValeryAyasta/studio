@@ -36,34 +36,47 @@ const sendEmailFlow = ai.defineFlow(
         pass: process.env.EMAIL_PASS,
       },
       pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
+      maxConnections: 1, // Let's be very conservative
+      rateLimit: 5, // 5 messages per second
     });
 
-    console.log(`Sending ${participants.length} emails.`);
+    console.log(`Sending ${participants.length} emails sequentially.`);
 
-    const emailPromises = participants.map(async (participant) => {
-      const participantJson = JSON.stringify(participant);
-      const qrCodeDataUrl = await qrcode.toDataURL(participantJson);
-      
-      const emailContent = `
-        <p>Hello ${participant.name},</p>
-        <p>We're excited to have you at our event. Please have this unique QR code ready for a smooth check-in process.</p>
-        <img src="${qrCodeDataUrl}" alt="Your QR Code" />
-        <p>See you there!</p>
-      `;
+    for (const participant of participants) {
+      try {
+        console.log(`Sending email to ${participant.email}...`);
+        const participantJson = JSON.stringify(participant);
+        const qrCodeDataUrl = await qrcode.toDataURL(participantJson);
+        
+        const emailContent = `
+          <p>Hello ${participant.name},</p>
+          <p>We're excited to have you at our event. Please have this unique QR code ready for a smooth check-in process.</p>
+          <img src="${qrCodeDataUrl}" alt="Your QR Code" />
+          <p>See you there!</p>
+        `;
 
-      return transporter.sendMail({
-        from: `"AttendEasy" <${process.env.EMAIL_USER}>`,
-        to: participant.email,
-        subject: 'Your Invitation to the Main Event!',
-        html: emailContent,
-      });
-    });
-
-    await Promise.all(emailPromises);
-
-    console.log('All emails have been sent.');
+        await transporter.sendMail({
+          from: `"AttendEasy" <${process.env.EMAIL_USER}>`,
+          to: participant.email,
+          subject: 'Your Invitation to the Main Event!',
+          html: emailContent,
+          attachments: [
+            {
+              filename: `qr-${participant.id}.png`,
+              content: qrCodeDataUrl.split("base64,")[1],
+              encoding: "base64",
+              cid: `qr-${participant.id}`
+            }
+          ]
+        });
+        console.log(`Email sent to ${participant.email}`);
+      } catch (error) {
+        console.error(`Failed to send email to ${participant.email}:`, error);
+        // We continue to the next participant even if one fails
+      }
+    }
+    
+    console.log('All emails have been processed.');
     transporter.close();
   }
 );
