@@ -1,10 +1,12 @@
 "use client";
 
-import { Mail, QrCode } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Mail, QrCode } from "lucide-react";
 import type { Participant } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { sendEmails } from "@/ai/flows/send-email-flow";
 
 interface InviteTabProps {
   participants: Participant[];
@@ -12,13 +14,26 @@ interface InviteTabProps {
 
 export function InviteTab({ participants }: InviteTabProps) {
   const { toast } = useToast();
+  const [isSending, setIsSending] = useState(false);
   const sampleParticipant = participants.find(p => p.email === 'valeryayasta@gmail.com') || participants[0];
 
-  const handleSendEmails = () => {
-    toast({
-      title: "Invitations Sent!",
-      description: `Successfully simulated sending ${participants.length} email invitations.`,
-    });
+  const handleSendEmails = async () => {
+    setIsSending(true);
+    try {
+      await sendEmails(participants);
+      toast({
+        title: "Invitations Sent!",
+        description: `Successfully sent ${participants.length} email invitations.`,
+      });
+    } catch (error) {
+      console.error("Failed to send emails", error);
+      toast({
+        title: "Failed to Send Invitations",
+        description: "There was an error sending the emails. Please try again later.",
+        variant: "destructive",
+      });
+    }
+    setIsSending(false);
   };
 
   return (
@@ -44,9 +59,13 @@ export function InviteTab({ participants }: InviteTabProps) {
             <p className="mt-4 text-sm">See you there!</p>
           </div>
         </div>
-        <Button onClick={handleSendEmails} className="w-full md:w-auto" size="lg">
-          <Mail className="mr-2 h-4 w-4" />
-          Send Invitations to {participants.length} Participants
+        <Button onClick={handleSendEmails} className="w-full md:w-auto" size="lg" disabled={isSending}>
+          {isSending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Mail className="mr-2 h-4 w-4" />
+          )}
+          {isSending ? 'Sending...' : `Send Invitations to ${participants.length} Participants`}
         </Button>
       </CardContent>
     </Card>
