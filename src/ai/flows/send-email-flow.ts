@@ -34,6 +34,9 @@ const sendEmailFlow = ai.defineFlow(
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
     });
 
     console.log(`Sending ${participants.length} emails.`);
@@ -57,6 +60,7 @@ const sendEmailFlow = ai.defineFlow(
     await Promise.all(emailPromises);
 
     console.log('All emails have been sent.');
+    transporter.close();
   }
 );
 
