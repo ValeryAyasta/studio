@@ -5,17 +5,15 @@ import { getDatabase, ref, get, set, update, child } from 'firebase/database';
 import type { Participant } from '@/lib/types';
 import { initialParticipants } from '@/lib/participants';
 
-const firebaseConfig: FirebaseOptions = {
-  apiKey: "AIzaSyCiGDghs77Nwy5h3upjK-kzQTwR5fjO4k4",
-  authDomain: "control-asistencia-e7499.firebaseapp.com",
-  projectId: "control-asistencia-e7499",
-  databaseURL: "https://control-asistencia-e7499-default-rtdb.firebaseio.com",
-  storageBucket: "control-asistencia-e7499.firebasestorage.app",
-  messagingSenderId: "839935230948",
-  appId: "1:839935230948:web:a0d66d17a6ad8d87b8fdf1",
-  measurementId: "G-26GT07D7D6"
+const firebaseConfig = {
+  apiKey: "AIzaSyDchHOsFUxITpZdB09ShgtpLhjrF_pjXyY",
+  authDomain: "studio-1109012300-d69eb.firebaseapp.com",
+  databaseURL: "https://studio-1109012300-d69eb-default-rtdb.firebaseio.com",
+  projectId: "studio-1109012300-d69eb",
+  storageBucket: "studio-1109012300-d69eb.firebasestorage.app",
+  messagingSenderId: "1031839838061",
+  appId: "1:1031839838061:web:91721096bfaedac7913464"
 };
-
 // Initialize Firebase for server-side
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
@@ -27,6 +25,7 @@ export async function getParticipants(): Promise<Participant[]> {
     const snapshot = await get(participantsRef);
     if (snapshot.exists()) {
         const data = snapshot.val();
+        console.log(data);
         return Object.keys(data).map(key => ({
             id: key,
             ...data[key]
@@ -50,8 +49,10 @@ export async function updateParticipantStatus(id: string, status: 'Attended' | '
 export async function seedParticipants() {
   try {
     const snapshot = await get(participantsRef);
-    if (snapshot.exists() && snapshot.size > 0) {
+    // For Realtime Database, we check if the snapshot exists and has children.
+    if (snapshot.exists() && snapshot.hasChildren()) {
       console.log('Participants collection is not empty. Seeding aborted.');
+      console.log(snapshot.val());
       return { success: true, message: 'Database already seeded.' };
     }
     
@@ -64,8 +65,8 @@ export async function seedParticipants() {
     await set(participantsRef, updates);
     console.log(`Successfully seeded ${initialParticipants.length} participants.`);
     return { success: true, message: `Successfully seeded ${initialParticipants.length} participants.` };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error seeding participants: ", error);
-    return { success: false, error: "Failed to seed database." };
+    return { success: false, error: error.message };
   }
 }
