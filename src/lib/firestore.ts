@@ -1,75 +1,83 @@
 'use server';
 
 import type { Participant } from '@/lib/types';
-import { db } from './firebase-admin';
-import { initialParticipants } from '@/data/participants';
 
+// The URL for your Firebase Realtime Database participants endpoint.
+const FIREBASE_URL = 'https://studio-1109012300-d69eb-default-rtdb.firebaseio.com/participants.json';
+
+// --- In-Memory Database Simulation ---
+
+// This will be our in-memory cache for the participants, refreshed on each fetch.
+let participants: Participant[] = [];
+
+// Utility function to simulate network delay.
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// --- Data Fetching Logic ---
+
+/**
+ * Fetches the participant list from Firebase and populates the in-memory cache.
+ */
+async function fetchAndCacheParticipants() {
+  console.log('Fetching participants from Firebase...');
+  try {
+    const response = await fetch(FIREBASE_URL, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`Firebase fetch failed: ${response.statusText}`);
+    }
+    const data = await response.json();
+    participants = data || []; // Update the cache with fresh data.
+    console.log('Successfully fetched and cached participants.');
+  } catch (error) {
+    console.error('Failed to fetch or cache participants:', error);
+    participants = []; // Reset to a safe state on error.
+  }
+}
+
+// --- Server Action Implementations ---
+
+/**
+ * This function is called on page load. It ALWAYS fetches the latest data
+ * from Firebase, updates the in-memory cache, and then returns the data.
+ */
 export async function getParticipants(): Promise<Participant[]> {
-  if (!db) {
-    console.error('Firebase Admin SDK not initialized.');
-    return [];
-  }
-  const participantsRef = db.ref('participants');
-  const snapshot = await participantsRef.get();
-  if (snapshot.exists()) {
-    const data = snapshot.val();
-    return Object.keys(data).map((key) => ({ ...data[key], id: key }));
-  }
-  return [];
+  console.log('New page load detected. Fetching fresh participant data...');
+  await fetchAndCacheParticipants();
+  // Return a copy of the freshly fetched data.
+  return JSON.parse(JSON.stringify(participants));
 }
 
 export async function updateParticipantStatus(
   id: string,
   status: 'Attended' | 'Not Attended'
 ) {
-  if (!db) {
-    console.error('Firebase Admin SDK not initialized.');
-    return { success: false, error: 'Failed to connect to database.' };
+  console.log(`Updating participant ${id} to status ${status}...`);
+  // Note: This function only updates the IN-MEMORY cache.
+  // The change will be overwritten the next time the page is loaded.
+
+  await delay(300); // Simulate update latency
+
+  const participantIndex = participants.findIndex((p) => p.id === id);
+
+  if (participantIndex === -1) {
+    console.error(`Participant with id ${id} not found in cache.`);
+    // This can happen if getParticipants hasn't been called yet for some reason.
+    return { success: false, error: 'Participant not found in memory. Try reloading.' };
   }
-  try {
-    const participantRef = db.ref(`participants/${id}`);
-    await participantRef.update({ status });
-    console.log(`Participant ${id} status updated to ${status}`);
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating participant status: ', error);
-    return { success: false, error: 'Failed to update status.' };
-  }
+
+  // Update the status in our in-memory cache.
+  participants[participantIndex].status = status;
+
+  console.log('In-memory update successful.');
+  return { success: true };
 }
 
+/**
+ * Re-seeds the in-memory database by forcing a fetch from Firebase.
+ */
 export async function seedParticipants() {
-  if (!db) {
-    console.error('Firebase Admin SDK not initialized.');
-    return { success: false, error: 'Failed to connect to database.' };
-  }
-  const ref = db.ref('participants');
-  const snapshot = await ref.once('value');
-  const data = snapshot.val();
-
-  if (data) {
-    console.log('Database already contains data:', data);
-    return { success: false, error: 'Database already seeded.', data: data };
-  }
-
-  try {
-    const updates: { [key: string]: Omit<Participant, 'id'> } = {};
-    initialParticipants.forEach((participant) => {
-      const { id, ...rest } = participant;
-      updates[id] = rest;
-    });
-
-    await db.ref('participants').set(updates);
-    console.log('Database seeded successfully!');
-    return { success: true, message: 'Database seeded successfully!' };
-  } catch (error: any) {
-    console.error('Error seeding database: ', error);
-    if (error.code === 'PERMISSION_DENIED') {
-      return {
-        success: false,
-        error:
-          'Permission denied. Please check your Firebase security rules and service account key.',
-      };
-    }
-    return { success: false, error: 'Failed to seed database.' };
-  }
+  console.log('Re-seeding in-memory database from Firebase...');
+  await fetchAndCacheParticipants();
+  console.log('Seeding successful!');
+  return { success: true, message: 'Database re-seeded successfully from Firebase!' };
 }

@@ -1,35 +1,65 @@
-"use client";
+'use client';
 
-import { CheckCircle2 } from "lucide-react";
-import type { Participant } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, XCircle, QrCode } from 'lucide-react';
+import type { Participant } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 interface ScanConfirmationProps {
   participant: Participant;
   onClose: () => void;
+  onStatusChange: (status: 'Attended' | 'Not Attended') => void;
 }
 
-export function ScanConfirmation({ participant, onClose }: ScanConfirmationProps) {
+export function ScanConfirmation({ participant, onClose, onStatusChange }: ScanConfirmationProps) {
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-sm animate-in fade-in-0 zoom-in-95 duration-500 shadow-2xl">
-        <CardContent className="p-6 pt-8 flex flex-col items-center text-center gap-4">
-          <div className="relative">
-            <div className="absolute -inset-2 bg-primary/20 rounded-full animate-ping"></div>
-            <div className="relative bg-primary/10 rounded-full p-4">
-              <CheckCircle2 className="text-primary size-12" />
-            </div>
+        <CardHeader className="p-6 flex flex-col items-center text-center">
+          <div className="relative mb-4">
+            {participant.status === 'Attended' ? (
+              <CheckCircle2 className="text-green-500 size-16" />
+            ) : (
+              <QrCode className="text-primary size-16" />
+            )}
           </div>
-          <div className="space-y-1 mt-2">
-            <CardTitle className="text-3xl font-headline">Checked In!</CardTitle>
-            <CardDescription className="text-lg font-semibold text-primary">{participant.name}</CardDescription>
+          <CardTitle className="text-2xl font-bold">{participant.name}</CardTitle>
+          <CardDescription>{participant.email}</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <p className="text-center text-sm text-muted-foreground mb-6">
+            Current status: <span className="font-semibold">{participant.status}</span>
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant="outline"
+              onClick={() => onStatusChange('Not Attended')}
+              disabled={participant.status === 'Not Attended'}
+            >
+              <XCircle className="mr-2 h-4 w-4" />
+              Check-Out
+            </Button>
+            <Button 
+              onClick={() => onStatusChange('Attended')}
+              disabled={participant.status === 'Attended'}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Check-In
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground">{participant.email}</p>
-          <Button onClick={onClose} className="mt-4 w-full" size="lg">
-            Done
-          </Button>
         </CardContent>
+        <CardFooter className="p-6 pt-0">
+          <Button variant="ghost" onClick={onClose} className="w-full">
+            Cancel
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );

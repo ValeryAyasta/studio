@@ -58,7 +58,7 @@ export function InviteTab({ participants }: InviteTabProps) {
   };
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Send Invitations</CardTitle>
         <CardDescription>
@@ -90,7 +90,7 @@ export function InviteTab({ participants }: InviteTabProps) {
              <p className="text-muted-foreground">No participants to display. Try seeding the database.</p>
            </div>
         )}
-        <Button onClick={handleSendEmails} className="w-full md:w-auto" size="lg" disabled={isSending || participants.length === 0}>
+        <Button onClick={handleSendEmails} className="w-full" size="lg" disabled={isSending || participants.length === 0}>
           {isSending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
