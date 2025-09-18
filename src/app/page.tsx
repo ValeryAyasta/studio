@@ -8,7 +8,7 @@ import { ref, onValue } from "firebase/database";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Participant } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { db } from "@/lib/firebase";
+import { db } from "@/lib/firebase"; // Use client-side db
 import { updateParticipantStatus, seedParticipants } from "@/lib/firestore";
 
 
@@ -23,7 +23,6 @@ export default function Home() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!db) return;
     const participantsRef = ref(db, 'participants');
     const unsubscribe = onValue(participantsRef, (snapshot) => {
       const data = snapshot.val();
