@@ -6,11 +6,7 @@ import { Mail, QrCode, Database } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Participant } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import {
-  getParticipants,
-  updateParticipantStatus,
-  seedParticipants,
-} from '@/lib/firestore';
+import { getParticipants, updateParticipantStatus, seedParticipants } from '@/lib/firestore';
 
 import { InviteTab } from '@/components/app/invite-tab';
 import { ScanTab } from '@/components/app/scan-tab';
@@ -132,8 +128,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 relative">
-      <div className="w-full max-w-md px-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8">
+      <div className="w-full max-w-4xl px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
           Firebase Studio
         </h1>

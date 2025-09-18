@@ -58,7 +58,7 @@ export function InviteTab({ participants }: InviteTabProps) {
   };
 
   return (
-    <Card className="shadow-lg max-w-2xl mx-auto">
+    <Card className="shadow-lg max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>Send Invitations</CardTitle>
         <CardDescription>
