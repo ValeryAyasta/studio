@@ -2,16 +2,15 @@ import { initializeApp, getApps, getApp, FirebaseOptions } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig: FirebaseOptions = {
-    apiKey: "AIzaSyCiGDghs77Nwy5h3upjK-kzQTwR5fjO4k4",
-    authDomain: "control-asistencia-e7499.firebaseapp.com",
-    projectId: "control-asistencia-e7499",
-    databaseURL: "https://control-asistencia-e7499-default-rtdb.firebaseio.com",
-    storageBucket: "control-asistencia-e7499.firebasestorage.app",
-    messagingSenderId: "839935230948",
-    appId: "1:839935230948:web:a0d66d17a6ad8d87b8fdf1",
-    measurementId: "G-26GT07D7D6"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
                 
-// Initialize Firebase for client-side
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const db = getDatabase(app);

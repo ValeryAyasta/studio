@@ -5,30 +5,43 @@ import { db } from './firebase-admin';
 import { initialParticipants } from '@/data/participants';
 
 export async function getParticipants(): Promise<Participant[]> {
+  if (!db) {
+    console.error('Firebase Admin SDK not initialized.');
+    return [];
+  }
   const participantsRef = db.ref('participants');
   const snapshot = await participantsRef.get();
   if (snapshot.exists()) {
     const data = snapshot.val();
-    console.log('Datos de Firebase:', data);
-    // The data from Firebase is an object, we need to convert it to an array.
-    return Object.keys(data).map(key => ({ ...data[key], id: key }));
+    return Object.keys(data).map((key) => ({ ...data[key], id: key }));
   }
   return [];
 }
 
-export async function updateParticipantStatus(id: string, status: 'Attended' | 'Not Attended') {
+export async function updateParticipantStatus(
+  id: string,
+  status: 'Attended' | 'Not Attended'
+) {
+  if (!db) {
+    console.error('Firebase Admin SDK not initialized.');
+    return { success: false, error: 'Failed to connect to database.' };
+  }
   try {
     const participantRef = db.ref(`participants/${id}`);
     await participantRef.update({ status });
     console.log(`Participant ${id} status updated to ${status}`);
     return { success: true };
   } catch (error) {
-    console.error("Error updating participant status: ", error);
-    return { success: false, error: "Failed to update status." };
+    console.error('Error updating participant status: ', error);
+    return { success: false, error: 'Failed to update status.' };
   }
 }
 
 export async function seedParticipants() {
+  if (!db) {
+    console.error('Firebase Admin SDK not initialized.');
+    return { success: false, error: 'Failed to connect to database.' };
+  }
   const ref = db.ref('participants');
   const snapshot = await ref.once('value');
   const data = snapshot.val();
@@ -40,8 +53,7 @@ export async function seedParticipants() {
 
   try {
     const updates: { [key: string]: Omit<Participant, 'id'> } = {};
-    initialParticipants.forEach(participant => {
-      // The ID will be the key in the Realtime Database
+    initialParticipants.forEach((participant) => {
       const { id, ...rest } = participant;
       updates[id] = rest;
     });
@@ -51,9 +63,12 @@ export async function seedParticipants() {
     return { success: true, message: 'Database seeded successfully!' };
   } catch (error: any) {
     console.error('Error seeding database: ', error);
-    // Check for permission errors specifically
     if (error.code === 'PERMISSION_DENIED') {
-        return { success: false, error: 'Permission denied. Please check your Firebase security rules.' };
+      return {
+        success: false,
+        error:
+          'Permission denied. Please check your Firebase security rules and service account key.',
+      };
     }
     return { success: false, error: 'Failed to seed database.' };
   }
