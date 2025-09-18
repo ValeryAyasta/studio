@@ -16,18 +16,13 @@ import { InviteTab } from '@/components/app/invite-tab';
 import { ScanTab } from '@/components/app/scan-tab';
 import { ScanConfirmation } from '@/components/app/scan-confirmation';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 export default function Home() {
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [scannedParticipant, setScannedParticipant] =
-    useState<Participant | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Add isLoading state
+  const [scannedParticipant, setScannedParticipant] = useState<Participant | null>(
+    null
+  );
   const { toast } = useToast();
 
   useEffect(() => {
@@ -35,11 +30,8 @@ export default function Home() {
       setIsLoading(true);
       try {
         const data = await getParticipants();
-        // The data from Realtime DB is an object, not an array. Convert it.
-        const participantsArray = data ? Object.values(data) : [];
-        setParticipants(participantsArray);
+        setParticipants(data);
       } catch (error) {
-        console.error(error);
         toast({
           title: 'Error',
           description: 'Could not fetch participants.',
@@ -49,7 +41,7 @@ export default function Home() {
       setIsLoading(false);
     };
     fetchInitialData();
-  }, [toast]);
+  }, []); // Empty dependency array to run only once on mount
 
   const handleSeed = async () => {
     const result = await seedParticipants();
@@ -61,8 +53,7 @@ export default function Home() {
       // Refetch data after seeding
       setIsLoading(true);
       const data = await getParticipants();
-      const participantsArray = data ? Object.values(data) : [];
-      setParticipants(participantsArray);
+      setParticipants(data);
       setIsLoading(false);
     } else {
       toast({
@@ -141,19 +132,17 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 sm:py-12 relative">
-      <div className="w-full max-w-md md:max-w-2xl lg:max-w-4xl px-4">
-        <div className="flex flex-col items-center text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-            AttendEasy
-          </h1>
-          <p className="text-base md:text-lg text-gray-500 mb-6 md:mb-8">
-            Event attendance, simplified.
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 relative">
+      <div className="w-full max-w-md px-4">
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
+          Firebase Studio
+        </h1>
+        <p className="text-center text-gray-500 mb-6">
+          A starter for awesome apps.
+        </p>
 
         <Tabs defaultValue="scan" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-sm mx-auto">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="scan">
               <QrCode className="w-4 h-4 mr-2" />
               Scan
@@ -164,6 +153,7 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="scan">
+            {/* Pass the isLoading state to ScanTab */}
             <ScanTab
               participants={participants}
               onScan={handleScan}
@@ -184,19 +174,10 @@ export default function Home() {
         )}
 
         <div className="absolute bottom-4 right-4">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={handleSeed}>
-                  <Database className="h-4 w-4" />
-                  <span className="sr-only">Seed Database</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Seed Database</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button variant="outline" size="icon" onClick={handleSeed}>
+            <Database className="h-4 w-4" />
+            <span className="sr-only">Seed Database</span>
+          </Button>
         </div>
       </div>
     </div>
