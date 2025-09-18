@@ -1,6 +1,6 @@
 'use client';
 import { initializeApp, getApps, getApp, FirebaseOptions } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: "AIzaSyCiGDghs77Nwy5h3upjK-kzQTwR5fjO4k4",
@@ -20,7 +20,7 @@ let db;
 // Server-side initialization is handled in firestore.ts.
 if (typeof window !== 'undefined') {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(app);
+    db = getDatabase(app);
 }
 
 

@@ -1,10 +1,9 @@
 'use server';
 
 import { initializeApp, getApps, getApp, FirebaseOptions } from 'firebase/app';
-import { getFirestore, collection, doc, updateDoc, getDocs, writeBatch } from 'firebase/firestore';
+import { getDatabase, ref, get, set, update, child } from 'firebase/database';
 import type { Participant } from '@/lib/types';
 import { initialParticipants } from '@/lib/participants';
-
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: "AIzaSyCiGDghs77Nwy5h3upjK-kzQTwR5fjO4k4",
@@ -19,23 +18,27 @@ const firebaseConfig: FirebaseOptions = {
 
 // Initialize Firebase for server-side
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+const db = getDatabase(app);
 
-const participantsCollection = collection(db, 'participants');
+const dbRef = ref(db);
+const participantsRef = ref(db, 'participants');
 
-export async function getParticipants() {
-    const snapshot = await getDocs(participantsCollection);
-    const participants: Participant[] = [];
-    snapshot.forEach(doc => {
-        participants.push({ id: doc.id, ...doc.data() } as Participant);
-    });
-    return participants;
+export async function getParticipants(): Promise<Participant[]> {
+    const snapshot = await get(participantsRef);
+    if (snapshot.exists()) {
+        const data = snapshot.val();
+        return Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+        }));
+    }
+    return [];
 }
 
 export async function updateParticipantStatus(id: string, status: 'Attended' | 'Not Attended') {
     try {
-        const participantRef = doc(db, 'participants', id);
-        await updateDoc(participantRef, { status });
+        const participantRef = ref(db, `participants/${id}`);
+        await update(participantRef, { status });
         console.log(`Participant ${id} status updated to ${status}`);
         return { success: true };
     } catch (error) {
@@ -46,24 +49,19 @@ export async function updateParticipantStatus(id: string, status: 'Attended' | '
 
 export async function seedParticipants() {
   try {
-    const snapshot = await getDocs(participantsCollection);
-    if (!snapshot.empty) {
+    const snapshot = await get(participantsRef);
+    if (snapshot.exists() && snapshot.size > 0) {
       console.log('Participants collection is not empty. Seeding aborted.');
       return { success: true, message: 'Database already seeded.' };
     }
     
-    const batch = writeBatch(db);
+    const updates: { [key: string]: Omit<Participant, 'id'> } = {};
     initialParticipants.forEach((participant) => {
-      // We use the ID from the mock data as the document ID in Firestore
-      const docRef = doc(db, "participants", participant.id);
-      batch.set(docRef, {
-        name: participant.name,
-        email: participant.email,
-        status: participant.status,
-      });
+      const { id, ...data } = participant;
+      updates[id] = data;
     });
 
-    await batch.commit();
+    await set(participantsRef, updates);
     console.log(`Successfully seeded ${initialParticipants.length} participants.`);
     return { success: true, message: `Successfully seeded ${initialParticipants.length} participants.` };
   } catch (error) {

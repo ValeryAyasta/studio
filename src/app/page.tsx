@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { Mail, QrCode, Database } from "lucide-react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { ref, onValue } from "firebase/database";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Participant } from "@/lib/types";
@@ -24,12 +24,18 @@ export default function Home() {
 
   useEffect(() => {
     if (!db) return;
-    const unsubscribe = onSnapshot(collection(db, "participants"), (snapshot) => {
-      const participantsData: Participant[] = [];
-      snapshot.forEach((doc) => {
-        participantsData.push({ id: doc.id, ...doc.data() } as Participant);
-      });
-      setParticipants(participantsData);
+    const participantsRef = ref(db, 'participants');
+    const unsubscribe = onValue(participantsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const participantsList: Participant[] = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        }));
+        setParticipants(participantsList);
+      } else {
+        setParticipants([]);
+      }
     });
 
     // Cleanup subscription on unmount
