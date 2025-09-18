@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
+import { Loader2, CameraOff } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 import type { Participant } from '@/lib/types';
 import {
@@ -13,6 +14,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ParticipantCard } from './participant-card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface ScanTabProps {
   participants: Participant[];
@@ -23,64 +25,78 @@ interface ScanTabProps {
 const QR_READER_ID = 'qr-reader';
 
 export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const { toast } = useToast();
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const isProcessingRef = useRef(false);
-
+  const [hasCameraPermission, setHasCameraPermission] = useState(true);
+  
   useEffect(() => {
-    if (isLoading || scannerRef.current || !document.getElementById(QR_READER_ID)) {
-      return;
+    // Only initialize if not already done
+    if (!scannerRef.current) {
+        scannerRef.current = new Html5Qrcode(QR_READER_ID, /* verbose= */ false);
     }
+    const scanner = scannerRef.current;
+    
+    // Check if the element is in the DOM
+    const qrReaderElement = document.getElementById(QR_READER_ID);
+    if (!qrReaderElement) return;
 
-    const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
-      const minEdgePercentage = 0.7; // 70%
-      const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-      const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-      return {
-        width: qrboxSize,
-        height: qrboxSize,
-      };
-    };
+    // Check permissions and start camera
+    const startScanner = async () => {
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length) {
+          setHasCameraPermission(true);
+          const cameraId = cameras[0].id;
 
-    const scanner = new Html5QrcodeScanner(
-      QR_READER_ID,
-      {
-        qrbox: qrboxFunction,
-        fps: 5,
-        rememberLastUsedCamera: true,
-      },
-      /* verbose= */ false
-    );
-
-    const success = (result: string) => {
-      if (isProcessingRef.current) return;
-      isProcessingRef.current = true;
-      scanner.pause(true);
-      onScan(result);
-
-      setTimeout(() => {
-        isProcessingRef.current = false;
-        if (scannerRef.current) {
-          scanner.resume();
+          const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
+            const minEdgePercentage = 0.7; // 70%
+            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+            return { width: qrboxSize, height: qrboxSize };
+          };
+          
+          if (scanner.getState() !== Html5QrcodeScannerState.SCANNING) {
+            await scanner.start(
+              cameraId,
+              {
+                fps: 5,
+                qrbox: qrboxFunction,
+              },
+              (decodedText, decodedResult) => {
+                if (isProcessingRef.current) return;
+                isProcessingRef.current = true;
+                onScan(decodedText);
+                setTimeout(() => {
+                  isProcessingRef.current = false;
+                }, 2000); // 2-second cooldown to prevent rapid multi-scans
+              },
+              (errorMessage) => {
+                // handle scan error
+              }
+            );
+          }
+        } else {
+            setHasCameraPermission(false);
         }
-      }, 1500);
+      } catch (err) {
+        console.error("Camera permission error:", err);
+        setHasCameraPermission(false);
+      }
     };
+    
+    startScanner();
 
-    const error = (err: any) => {
-      // Ignore frequent errors
-    };
-
-    scanner.render(success, error);
-    scannerRef.current = scanner;
-
+    // Cleanup function to stop the scanner
     return () => {
-      if (scannerRef.current && (scannerRef.current as any).getState() === 2) { // 2 is SCANNING STATE
-        scannerRef.current.clear().catch((err) => {
-          console.error('Failed to clear scanner on unmount.', err);
+      if (scanner && scanner.getState() === Html5QrcodeScannerState.SCANNING) {
+        scanner.stop().catch(err => {
+          console.error("Failed to stop scanner:", err);
         });
       }
-      scannerRef.current = null;
     };
   }, [isLoading, onScan]);
+
 
   return (
     <Card className="shadow-lg">
@@ -96,13 +112,21 @@ export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
             {isLoading ? (
               <div className="flex flex-col h-full items-center justify-center gap-4 text-primary">
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <h3 className="text-lg font-semibold">Loading Scanner...</h3>
-                <p className="text-sm text-muted-foreground px-4">
-                  Please wait for the attendance list to load.
-                </p>
+                <h3 className="text-lg font-semibold">Loading Data...</h3>
               </div>
             ) : (
-              <div id={QR_READER_ID} className="w-full h-full rounded-md overflow-hidden"></div>
+                <>
+                    <div id={QR_READER_ID} className="w-full h-full rounded-md overflow-hidden" />
+                    {!hasCameraPermission && (
+                         <div className="flex flex-col h-full items-center justify-center gap-4 text-destructive">
+                            <CameraOff className="h-8 w-8" />
+                            <h3 className="text-lg font-semibold">Camera Access Denied</h3>
+                            <p className="text-sm text-muted-foreground px-4">
+                            Please enable camera permissions in your browser settings to use the scanner.
+                            </p>
+                        </div>
+                    )}
+                </>
             )}
           </div>
         </div>

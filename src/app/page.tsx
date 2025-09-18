@@ -68,7 +68,7 @@ export default function Home() {
       toast({
         title: 'Seeding Failed',
         description:
-          result?.error || 'An unknown error occurred during seeding.',
+          'An unknown error occurred during seeding.',
         variant: 'destructive',
       });
     }
