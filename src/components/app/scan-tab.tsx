@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/card';
 import { ParticipantCard } from './participant-card';
 import { ScrollArea } from '../ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
 
 interface ScanTabProps {
   participants: Participant[];
@@ -25,10 +27,12 @@ const QR_READER_ID = 'qr-reader';
 
 export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const isProcessingRef = useRef(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<
     boolean | null
   >(null);
+  const { toast } = useToast();
 
   const onScanSuccess = useCallback(
     (decodedText: string) => {
@@ -47,56 +51,64 @@ export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
   };
 
   useEffect(() => {
-    if (typeof window === 'undefined' || scannerRef.current) return;
+    if (typeof window === 'undefined') return;
 
     const scanner = new Html5Qrcode(QR_READER_ID, { verbose: false });
     scannerRef.current = scanner;
 
     const startScanner = async () => {
       try {
-        await Html5Qrcode.getCameras();
-        setHasCameraPermission(true);
-        const readerElement = document.getElementById(QR_READER_ID);
-        if (
-          readerElement &&
-          scanner.getState() === Html5QrcodeScannerState.NOT_STARTED
-        ) {
-          await scanner.start(
-            { facingMode: 'environment' },
-            {
-              fps: 5,
-              qrbox: (viewfinderWidth, viewfinderHeight) => {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const qrboxSize = Math.floor(minEdge * 0.7);
-                return { width: qrboxSize, height: qrboxSize };
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length) {
+          setHasCameraPermission(true);
+          if (
+            scannerRef.current &&
+            scannerRef.current.getState() !== Html5QrcodeScannerState.SCANNING
+          ) {
+            await scannerRef.current.start(
+              { facingMode: 'environment' },
+              {
+                fps: 5,
+                qrbox: (viewfinderWidth, viewfinderHeight) => {
+                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                  const qrboxSize = Math.floor(minEdge * 0.7);
+                  return { width: qrboxSize, height: qrboxSize };
+                },
               },
-            },
-            onScanSuccess,
-            onScanError
-          );
+              onScanSuccess,
+              onScanError
+            );
+          }
+        } else {
+          setHasCameraPermission(false);
         }
       } catch (err) {
         console.error('Camera permission error or start failed:', err);
         setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Error',
+          description:
+            'Could not access camera. Please check permissions and try again.',
+        });
       }
     };
 
-    if (!isLoading) {
+    if (!isLoading && hasCameraPermission === null) {
       startScanner();
     }
 
     return () => {
-      if (scanner && scanner.isScanning) {
-        scanner.stop().catch((err) => {
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch((err) => {
           console.error('Failed to stop scanner:', err);
         });
       }
-      scannerRef.current = null;
     };
-  }, [isLoading, onScanSuccess]);
+  }, [isLoading, hasCameraPermission, onScanSuccess, toast]);
 
   return (
-    <Card className="shadow-lg max-w-6xl 2xl:max-w-7xl mx-auto">
+    <Card className="shadow-lg w-full">
       <CardHeader>
         <CardTitle>Scan & Track Attendance</CardTitle>
         <CardDescription>
@@ -105,25 +117,25 @@ export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
       </CardHeader>
       <CardContent className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8">
         <div className="p-4 md:p-6 bg-primary/5 rounded-lg flex flex-col items-center justify-center text-center border border-primary/10 lg:sticky lg:top-4 lg:self-start">
-          <div className="w-full aspect-video sm:aspect-square max-w-sm mx-auto relative rounded-md overflow-hidden">
+          <div className="w-full aspect-video sm:aspect-square max-w-sm mx-auto relative rounded-md overflow-hidden bg-muted">
             <div id={QR_READER_ID} className="w-full h-full" />
 
-            {(isLoading || hasCameraPermission === null) && (
+            {hasCameraPermission === null && !isLoading && (
               <div className="absolute inset-0 flex flex-col h-full items-center justify-center gap-4 text-primary bg-background/80 z-10">
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <h3 className="text-lg font-semibold">Loading Scanner...</h3>
+                <h3 className="text-lg font-semibold">Requesting Camera...</h3>
               </div>
             )}
-
+            
             {hasCameraPermission === false && !isLoading && (
-              <div className="absolute inset-0 flex flex-col h-full items-center justify-center gap-4 text-destructive bg-background/80 z-10 p-4">
-                <CameraOff className="h-8 w-8" />
-                <h3 className="text-lg font-semibold">Camera Access Denied</h3>
-                <p className="text-sm text-muted-foreground">
-                  Please enable camera permissions in your browser settings to
-                  use the scanner.
-                </p>
-              </div>
+               <div className="absolute inset-0 flex flex-col h-full items-center justify-center gap-4 text-destructive bg-background/80 z-10 p-4">
+                 <CameraOff className="h-8 w-8" />
+                 <h3 className="text-lg font-semibold">Camera Access Denied</h3>
+                 <p className="text-sm text-muted-foreground">
+                   Please enable camera permissions in your browser settings to
+                   use the scanner.
+                 </p>
+               </div>
             )}
           </div>
         </div>
@@ -136,7 +148,7 @@ export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
             </p>
           ) : (
             <ScrollArea className="h-auto lg:h-[calc(100vh-20rem)]">
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3 gap-4 pr-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-4">
                 {participants
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((p) => (
