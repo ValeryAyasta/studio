@@ -1,55 +1,60 @@
 'use server';
 
-import { ref, get, set, update } from 'firebase/database';
 import type { Participant } from '@/lib/types';
-import { initialParticipants } from '@/data/participants';
 import { db } from './firebase-admin';
-
+import { initialParticipants } from '@/data/participants';
 
 export async function getParticipants(): Promise<Participant[]> {
-  const participantsRef = ref(db, 'participants');
-  const snapshot = await get(participantsRef);
+  const participantsRef = db.ref('participants');
+  const snapshot = await participantsRef.get();
   if (snapshot.exists()) {
     const data = snapshot.val();
-    console.log(data);
-    return Object.values(data) as Participant[];
-    }
+    console.log('Datos de Firebase:', data);
+    // The data from Firebase is an object, we need to convert it to an array.
+    return Object.keys(data).map(key => ({ ...data[key], id: key }));
+  }
   return [];
 }
-                                                                                
-  export async function updateParticipantStatus(id: string, status: 'Attended' | 'Not Attended') {
-    try {
-      const participantRef = ref(db, `participants/${id}`);
-      await update(participantRef, { status });
-      console.log(`Participant ${id} status updated to ${status}`);
-      return { success: true };
-      } catch (error) {
-        console.error("Error updating participant status: ", error);
-        return { success: false, error: "Failed to update status." };
-      }
+
+export async function updateParticipantStatus(id: string, status: 'Attended' | 'Not Attended') {
+  try {
+    const participantRef = db.ref(`participants/${id}`);
+    await participantRef.update({ status });
+    console.log(`Participant ${id} status updated to ${status}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating participant status: ", error);
+    return { success: false, error: "Failed to update status." };
   }
-                                                                                                                                            
-  export async function seedParticipants() {
-    const participantsRef = ref(db, 'participants');
-    try {
-      const snapshot = await get(participantsRef);
-      if (snapshot.exists() && snapshot.val() !== null) {
-        console.log("Database already contains data:", snapshot.val());
-        return { success: true, message: 'Database already seeded.' };
-      }
-                                                                                                                                                                          
-      const updates: { [key: string]: Omit<Participant, 'id'> } = {};
-      initialParticipants.forEach((participant) => {
-        const { id, ...data } = participant;
-        updates[id] = data;
-      });
-                                                                                                                                                                                                  
-      await set(participantsRef, updates);
-      console.log(`Successfully seeded ${initialParticipants.length} participants.`);
-      return { success: true, message: `Successfully seeded ${initialParticipants.length} participants.` };
-    } catch (error: any) {
-      console.error("Error seeding participants: ", error);
-      return { success: false, error: error.message };
-    }
 }
-                                                                                                                                                                                                                            
+
+export async function seedParticipants() {
+  const ref = db.ref('participants');
+  const snapshot = await ref.once('value');
+  const data = snapshot.val();
+
+  if (data) {
+    console.log('Database already contains data:', data);
+    return { success: false, error: 'Database already seeded.', data: data };
+  }
+
+  try {
+    const updates: { [key: string]: Omit<Participant, 'id'> } = {};
+    initialParticipants.forEach(participant => {
+      // The ID will be the key in the Realtime Database
+      const { id, ...rest } = participant;
+      updates[id] = rest;
+    });
+
+    await db.ref('participants').set(updates);
+    console.log('Database seeded successfully!');
+    return { success: true, message: 'Database seeded successfully!' };
+  } catch (error: any) {
+    console.error('Error seeding database: ', error);
+    // Check for permission errors specifically
+    if (error.code === 'PERMISSION_DENIED') {
+        return { success: false, error: 'Permission denied. Please check your Firebase security rules.' };
+    }
+    return { success: false, error: 'Failed to seed database.' };
+  }
+}
