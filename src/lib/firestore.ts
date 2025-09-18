@@ -3,7 +3,7 @@
 import { initializeApp, getApps, getApp, FirebaseOptions } from 'firebase/app';
 import { getDatabase, ref, get, set, update, child } from 'firebase/database';
 import type { Participant } from '@/lib/types';
-import { initialParticipants } from '@/lib/participants';
+import { participants as initialParticipants } from '@/lib/participants.json';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDchHOsFUxITpZdB09ShgtpLhjrF_pjXyY",
