@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 import { Loader2, CameraOff } from 'lucide-react';
 
-import type { Participant } from '@/lib/types';
+import type { AttendanceSummary, Participant } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -21,11 +21,13 @@ interface ScanTabProps {
   participants: Participant[];
   onScan: (id: string) => void;
   isLoading: boolean;
+  currentDay: "day1" | "day2";
+  summary: AttendanceSummary
 }
 
 const QR_READER_ID = 'qr-reader';
 
-export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
+export function ScanTab({ participants, onScan, isLoading, currentDay, summary }: ScanTabProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const isProcessingRef = useRef(false);
@@ -69,7 +71,8 @@ export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
               { facingMode: 'environment' },
               {
                 fps: 5,
-                qrbox: (viewfinderWidth, viewfinderHeight) => {
+                qrbox: 
+                (viewfinderWidth, viewfinderHeight) => {
                   const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
                   const qrboxSize = Math.floor(minEdge * 0.7);
                   return { width: qrboxSize, height: qrboxSize };
@@ -117,8 +120,8 @@ export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
       </CardHeader>
       <CardContent className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8">
         <div className="p-4 md:p-6 bg-primary/5 rounded-lg flex flex-col items-center justify-center text-center border border-primary/10 lg:sticky lg:top-4 lg:self-start">
-          <div className="w-full aspect-video sm:aspect-square max-w-sm mx-auto relative rounded-md overflow-hidden bg-muted">
-            <div id={QR_READER_ID} className="w-full h-full" />
+          <div className="w-full rounded-md overflow-hidden bg-muted">
+            <div id={QR_READER_ID} className="w-full h-80" />
 
             {hasCameraPermission === null && !isLoading && (
               <div className="absolute inset-0 flex flex-col h-full items-center justify-center gap-4 text-primary bg-background/80 z-10">
@@ -141,7 +144,9 @@ export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mb-4">Attendance List</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Attendance List: {summary[currentDay]}
+          </h3>
           {participants.length === 0 && !isLoading ? (
             <p className="text-muted-foreground text-center py-8">
               No participants found. Try seeding the database.
@@ -152,7 +157,7 @@ export function ScanTab({ participants, onScan, isLoading }: ScanTabProps) {
                 {participants
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((p) => (
-                    <ParticipantCard key={p.id} participant={p} />
+                    <ParticipantCard key={p.email} participant={p} currentDay={currentDay} />
                   ))}
               </div>
             </ScrollArea>

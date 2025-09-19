@@ -2,5 +2,12 @@ export interface Participant {
   id: string;
   name: string;
   email: string;
-  status: 'Attended' | 'Not Attended';
+  attendance: {
+    day1: 'Attended' | 'Not Attended';
+    day2: 'Attended' | 'Not Attended';
+  };
+}
+export interface AttendanceSummary {
+  day1: number;
+  day2: number;
 }

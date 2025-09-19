@@ -18,7 +18,7 @@ export function InviteTab({ participants }: InviteTabProps) {
   const [isSending, setIsSending] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   
-  const sampleParticipant = participants.find(p => p.email === 'valeryayasta@gmail.com') || (participants.length > 0 ? participants[0] : null);
+  const sampleParticipant = participants.length > 0 ? participants[0] : null;
 
   useEffect(() => {
     if (sampleParticipant) {
@@ -69,20 +69,34 @@ export function InviteTab({ participants }: InviteTabProps) {
        {sampleParticipant ? (
           <div className="border rounded-lg p-4 space-y-4 bg-secondary/30">
             <h3 className="font-semibold text-foreground">Email Preview</h3>
-            <p className="text-sm text-muted-foreground">To: {sampleParticipant.email}</p>
-            <p className="text-sm font-bold">Subject: Your Invitation to the Main Event!</p>
+            <p className="text-sm text-muted-foreground">To: participante@correo.com</p>
+            <p className="text-sm font-bold">Subject: REGISTRO DE INVITADOS VI CONFERENCIA HEMISFERICA</p>
             <div className="pt-4 border-t">
-              <p className="text-sm">Hello {sampleParticipant.name},</p>
-              <p className="mt-2 text-sm text-muted-foreground">We're excited to have you at our event. Please have this unique QR code ready for a smooth check-in process.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+              Estimado/a participante:
+
+<br></br>Reciba un cordial saludo.<br></br>
+
+Con relación a su registro de la <b>VI Conferencia Hemisférica sobre Gestión Portuaria Sostenible y Protección Ambiental,</b>
+ que se llevará a cabo los días <b>23 y 24 de septiembre de 2025 en el Swissôtel Lima</b> (Av. Santo Toribio 173, San Isidro), nos complace remitirle su <b>código QR personal</b>, el cual deberá presentar en el área de acreditación para su registro de ingreso.
+<br></br>
+Le recomendamos conservar este código y llevarlo en formato digital el día del evento.<br></br>
+
+Agradecemos su participación y quedamos atentos a cualquier consulta adicional.<br></br>
+
+
+              </p>
               <div className="mt-4 flex flex-col items-center justify-center text-center p-4 bg-background rounded-md shadow-inner">
                 {qrCodeUrl ? (
                   <img src={qrCodeUrl} alt="Participant QR Code" className="h-32 w-32" />
                 ) : (
                   <div className="h-32 w-32 bg-muted-foreground/10 animate-pulse rounded-md"></div>
                 )}
-                <p className="mt-2 text-xs text-muted-foreground">Your personal QR code</p>
+                <p className="mt-2 text-xs text-muted-foreground">Tu personal QR code</p>
               </div>
-              <p className="mt-4 text-sm">See you there!</p>
+              <p className="mt-4 text-sm">Atentamente,<br></br> Presidente del Comité Técnico Consultivo (CTC) sobre Gestión Portuaria Sostenible Y Protección Ambiental
+<br></br>
+AUTORIDAD PORTUARIA NACIONAL</p>
             </div>
           </div>
         ) : (

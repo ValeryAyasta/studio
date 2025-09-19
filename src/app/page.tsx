@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mail, QrCode, Database } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Participant } from '@/lib/types';
+import type { Participant, AttendanceSummary } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getParticipants, updateParticipantStatus, seedParticipants } from '@/lib/firestore';
 
@@ -13,12 +13,20 @@ import { ScanTab } from '@/components/app/scan-tab';
 import { ScanConfirmation } from '@/components/app/scan-confirmation';
 import { Button } from '@/components/ui/button';
 
+
+
 export default function Home() {
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const participantsRef = useRef<Participant[]>([]);
   const [isLoading, setIsLoading] = useState(true); // Add isLoading state
-  const [scannedParticipant, setScannedParticipant] = useState<Participant | null>(
-    null
-  );
+  const [currentDay, setCurrentDay] = useState<"day1" | "day2">("day1");
+  const [summary, setSummary] = useState<AttendanceSummary>({ day1: 0, day2: 0 });
+  const [scannedParticipantId, setScannedParticipantId] = useState<string | null>(null);
+
+const scannedParticipant = scannedParticipantId
+  ? participants.find((p) => p.id === scannedParticipantId) || null
+  : null;
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,6 +35,8 @@ export default function Home() {
       try {
         const data = await getParticipants();
         setParticipants(data);
+        participantsRef.current = data;
+
       } catch (error) {
         toast({
           title: 'Error',
@@ -37,6 +47,24 @@ export default function Home() {
       setIsLoading(false);
     };
     fetchInitialData();
+
+    async function fetchSummary() {
+      try {
+        const res = await fetch(
+          "https://studio-1109012300-d69eb-default-rtdb.firebaseio.com/attendanceSummary.json"
+        );
+        const data = await res.json();
+        setSummary(data || { day1: 0, day2: 0 });
+      } catch (err) {
+        console.error("Error fetching summary:", err);
+        setSummary({ day1: 0, day2: 0 });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchSummary();
+
   }, []); // Empty dependency array to run only once on mount
 
   const handleSeed = async () => {
@@ -79,16 +107,15 @@ export default function Home() {
       cleanedId = cleanedId.replace(/^"|"$/g, '');
     }
 
-    const participant = participants.find((p) => p.id === cleanedId);
+    const participant = participantsRef.current.find((p) => p.id === cleanedId);
 
     if (participant) {
-      setScannedParticipant(participant);
-    } else {
+      setScannedParticipantId(participant.id);    } else {
       console.error(
         'Failed to find participant. Scanned Value:',
         scannedValue,
         'Cleaned ID:',
-        cleanedId
+        cleanedId, 'in ', participants, '.'
       );
       toast({
         title: 'Scan Error',
@@ -99,23 +126,36 @@ export default function Home() {
   };
 
   const handleCloseConfirmation = () => {
-    setScannedParticipant(null);
+    setScannedParticipantId(null);
   };
 
   const handleStatusChange = async (status: 'Attended' | 'Not Attended') => {
     if (!scannedParticipant) return;
 
-    const result = await updateParticipantStatus(scannedParticipant.id, status);
+    const result = await updateParticipantStatus(scannedParticipant.id, currentDay, status);
 
     if (result?.success) {
       setParticipants((prev) =>
         prev.map((p) =>
-          p.id === scannedParticipant.id ? { ...p, status } : p
+          p.id === scannedParticipant.id 
+            ? { 
+                ...p, 
+                attendance: {
+                  ...p.attendance,
+                  [currentDay]: status, 
+                }, 
+              } 
+            : p
         )
       );
+
+      setSummary(prev => ({
+        ...prev,
+        [currentDay]: prev[currentDay] + (status === 'Attended' ? 1 : -1)
+      }));
       toast({
         title: `Status Updated`,
-        description: `${scannedParticipant.name}'s status updated to ${status}`,
+        description: `${scannedParticipant.name}'s status for ${currentDay} updated to ${status}`,
       });
     } else {
       toast({
@@ -124,18 +164,34 @@ export default function Home() {
         variant: 'destructive',
       });
     }
-    setScannedParticipant(null);
+    setScannedParticipantId(null);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8">
       <div className="w-full max-w-6xl 2xl:max-w-7xl px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Firebase Studio
+          Control de Asistencia
         </h1>
         <p className="text-center text-gray-500 mb-6">
           A starter for awesome apps.
         </p>
+
+        <div className="flex justify-center gap-4 mb-6">
+          <Button 
+            variant={currentDay === "day1" ? "default" : "outline"} 
+            onClick={() => setCurrentDay("day1")}
+          >
+            Día 1
+          </Button>
+          <Button 
+            variant={currentDay === "day2" ? "default" : "outline"} 
+            onClick={() => setCurrentDay("day2")}
+          >
+            Día 2
+          </Button>
+        </div>
+
 
         <Tabs defaultValue="scan" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -154,6 +210,8 @@ export default function Home() {
               participants={participants}
               onScan={handleScan}
               isLoading={isLoading}
+              currentDay={currentDay}
+              summary={summary}
             />
           </TabsContent>
           <TabsContent value="invite">
@@ -166,6 +224,7 @@ export default function Home() {
             participant={scannedParticipant}
             onClose={handleCloseConfirmation}
             onStatusChange={handleStatusChange}
+            currentDay={currentDay}
           />
         )}
 

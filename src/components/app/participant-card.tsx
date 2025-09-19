@@ -5,10 +5,11 @@ import { User, Mail } from "lucide-react";
 
 interface ParticipantCardProps {
     participant: Participant;
+    currentDay: "day1" | "day2";
 }
 
-export function ParticipantCard({ participant }: ParticipantCardProps) {
-    const isAttended = participant.status === "Attended";
+export function ParticipantCard({ participant, currentDay }: ParticipantCardProps) {
+    const isAttended = participant.attendance[currentDay] === "Attended";
 
     return (
         <Card className={`transition-all duration-300 ${isAttended ? 'bg-primary/5 border-primary/20' : ''}`}>
@@ -19,7 +20,7 @@ export function ParticipantCard({ participant }: ParticipantCardProps) {
                         <span className="truncate">{participant.name}</span>
                     </CardTitle>
                     <Badge variant={isAttended ? "default" : "outline"} className="capitalize whitespace-nowrap">
-                        {participant.status.toLowerCase()}
+                        {participant.attendance[currentDay].toLowerCase()}
                     </Badge>
                 </div>
             </CardHeader>

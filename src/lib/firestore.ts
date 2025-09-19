@@ -27,6 +27,22 @@ async function fetchAndCacheParticipants() {
     }
     const data = await response.json();
     participants = data || []; // Update the cache with fresh data.
+
+    participants.forEach(async (p, index) => {
+      if (!p.id) {
+        const newId = crypto.randomUUID();
+        await fetch(
+          `https://studio-1109012300-d69eb-default-rtdb.firebaseio.com/participants/${index}.json`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: newId }),
+          }
+        );
+        p.id = newId;
+      }
+    });
+
     console.log('Successfully fetched and cached participants.');
   } catch (error) {
     console.error('Failed to fetch or cache participants:', error);
@@ -49,24 +65,54 @@ export async function getParticipants(): Promise<Participant[]> {
 
 export async function updateParticipantStatus(
   id: string,
+  day: "day1" | "day2",
   status: 'Attended' | 'Not Attended'
 ) {
   console.log(`Updating participant ${id} to status ${status}...`);
-  // Note: This function only updates the IN-MEMORY cache.
-  // The change will be overwritten the next time the page is loaded.
-
-  await delay(300); // Simulate update latency
 
   const participantIndex = participants.findIndex((p) => p.id === id);
-
+  
   if (participantIndex === -1) {
     console.error(`Participant with id ${id} not found in cache.`);
     // This can happen if getParticipants hasn't been called yet for some reason.
-    return { success: false, error: 'Participant not found in memory. Try reloading.' };
+    return { success: false, error: `Participant ${id} not found in memory. Try reloading.` };
   }
 
-  // Update the status in our in-memory cache.
-  participants[participantIndex].status = status;
+
+  try{
+    const res = await fetch(
+      `https://studio-1109012300-d69eb-default-rtdb.firebaseio.com/participants/${participantIndex}/attendance.json`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [day]: status }), // 👈 solo ese día
+      }
+    );
+    if (!res.ok) {
+      throw new Error(`Firebase update failed with ${res.text}`);
+    }
+    participants[participantIndex].attendance[day] = status;
+    console.log(`Participant ${id} updated in DB to ${status}`);
+
+    let day1Count = 0;
+    let day2Count = 0;
+
+    participants.forEach((p: any) => {
+      if (p.attendance?.day1 === "Attended") day1Count++;
+      if (p.attendance?.day2 === "Attended") day2Count++;
+    });
+
+    // 3. Guardar el resumen
+    await fetch(`${FIREBASE_URL}/attendanceSummary.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ day1: day1Count, day2: day2Count }),
+    });
+
+  } catch(error){
+    console.error("Error updating participant:", error);
+    return { success: false, error: (error as Error).message };
+  }
 
   console.log('In-memory update successful.');
   return { success: true };

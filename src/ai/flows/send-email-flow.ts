@@ -17,7 +17,10 @@ const ParticipantSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string().email(),
-  status: z.enum(['Attended', 'Not Attended']),
+  attendance: z.object({
+    day1: z.enum(["Attended", "Not Attended"]),
+    day2: z.enum(["Attended", "Not Attended"]),
+  }),
 });
 
 const sendEmailFlow = ai.defineFlow(
@@ -49,15 +52,27 @@ const sendEmailFlow = ai.defineFlow(
         
         const emailContent = `
           <p>Hello ${participant.name},</p>
-          <p>We're excited to have you at our event. Please have this unique QR code ready for a smooth check-in process.</p>
+          <p>Estimado/a participante<br></br>
+
+Reciba un cordial saludo.<br></br>
+
+Con relación a su registro de la <b>VI Conferencia Hemisférica sobre Gestión Portuaria Sostenible y Protección Ambiental,</b> que se llevará a cabo los días <b>23 y 24 de septiembre de 2025 en el Swissôtel Lima</b> (Av. Santo Toribio 173, San Isidro), nos complace remitirle su <b>código QR personal</b>, el cual deberá presentar en el área de acreditación para su registro de ingreso.
+<br></br>
+Le recomendamos conservar este código y llevarlo en formato digital el día del evento.<br></br>
+
+Agradecemos su participación y quedamos atentos a cualquier consulta adicional.<br></br>
+
+Atentamente,<br></br> Presidente del Comité Técnico Consultivo (CTC) sobre Gestión Portuaria Sostenible Y Protección Ambiental
+<br></br>
+AUTORIDAD PORTUARIA NACIONAL</p>
           <img src="${qrCodeDataUrl}" alt="Your QR Code" />
           <p>See you there!</p>
         `;
 
         await transporter.sendMail({
-          from: `"AttendEasy" <${process.env.EMAIL_USER}>`,
+          from: `"@" <${process.env.EMAIL_USER}>`,
           to: participant.email,
-          subject: 'Your Invitation to the Main Event!',
+          subject: 'REGISTRO DE INVITADOS VI CONFERENCIA HEMISFERICA',
           html: emailContent,
           attachments: [
             {
