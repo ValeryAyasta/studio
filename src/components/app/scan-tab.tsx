@@ -60,18 +60,23 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
       if (cameras && cameras.length) {
         setHasCameraPermission(true);
 
+        const backCamera = cameras.find(cam =>
+          cam.label.toLowerCase().includes("back")
+          || cam.label.toLowerCase().includes("rear")
+        );
+
         if (
           scannerRef.current &&
           scannerRef.current.getState() !== Html5QrcodeScannerState.SCANNING
         ) {
-          const cameraId = cameras[0].id; // 👈 primera cámara encontrada
+          const cameraId = backCamera ? backCamera.id : cameras[0].id;
           await scannerRef.current.start(
             { deviceId: { exact: cameraId } },
             {
               fps: 5,
               qrbox: (viewfinderWidth, viewfinderHeight) => {
                 const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const qrboxSize = Math.floor(minEdge * 0.7);
+                const qrboxSize = Math.floor(minEdge * 0.8);
                 return { width: qrboxSize, height: qrboxSize };
               },
             },
@@ -126,7 +131,7 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
       <CardContent className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8">
         <div className="p-4 md:p-6 bg-primary/5 rounded-lg flex flex-col items-center justify-center text-center border border-primary/10 lg:sticky lg:top-4 lg:self-start">
           <div className="w-full rounded-md overflow-hidden bg-muted">
-            <div id={QR_READER_ID} className="w-full h-80" />
+            <div id={QR_READER_ID} className="w-full h-100" />
 
             {!scannerStarted && !isLoading && (
               <div className="absolute inset-0 flex flex-col h-full items-center justify-center gap-4 bg-background/90 z-10">
