@@ -70,7 +70,7 @@ AUTORIDAD PORTUARIA NACIONAL</p>
         `;
 
         await transporter.sendMail({
-          from: `"@" <${process.env.EMAIL_USER}>`,
+          from: `"AUTORIDAD PORTUARIA NACIONAL" <${process.env.EMAIL_USER}>`,
           to: participant.email,
           subject: 'REGISTRO DE INVITADOS VI CONFERENCIA HEMISFERICA',
           html: emailContent,
