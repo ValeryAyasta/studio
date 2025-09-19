@@ -68,12 +68,14 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
           cam.label.toLowerCase().includes('back')
         ) || cameras[0];
 
+        const cameraId = backCamera ? backCamera.id : cameras[0].id;
+
           if (
             scannerRef.current &&
             scannerRef.current.getState() !== Html5QrcodeScannerState.SCANNING
           ) {
             await scannerRef.current.start(
-              backCamera.id,
+              { deviceId: { exact: cameraId } },
               {
                 fps: 5,
                 qrbox: 
@@ -103,6 +105,8 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
     };
 
     if (!isLoading && hasCameraPermission === null) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => console.log("Funciona", stream));
       startScanner();
     }
 
