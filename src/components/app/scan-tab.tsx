@@ -93,9 +93,9 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
       setHasCameraPermission(false);
       toast({
         variant: 'destructive',
-        title: 'Camera Error',
+        title: 'Camara Error',
         description:
-          'Could not access camera. Please check permissions and try again.',
+          'No se puede acceder a la cámara. Por favor revisa los permisos e intenta de nuevo.',
       });
     }
   };
@@ -123,9 +123,9 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
   return (
     <Card className="shadow-lg w-full">
       <CardHeader>
-        <CardTitle>Scan & Track Attendance</CardTitle>
+        <CardTitle>Escanea y marca la asistencia</CardTitle>
         <CardDescription>
-          Scan a participant's QR code to mark them as attended.
+          Escanea el código QR del participante para marcar su asistencia
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8">
@@ -145,10 +145,9 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
             {hasCameraPermission === false && !isLoading && (
                <div className="absolute inset-0 flex flex-col h-full items-center justify-center gap-4 text-destructive bg-background/80 z-10 p-4">
                  <CameraOff className="h-8 w-8" />
-                 <h3 className="text-lg font-semibold">Camera Access Denied</h3>
+                 <h3 className="text-lg font-semibold">Acceso a la cámara denegado</h3>
                  <p className="text-sm text-muted-foreground">
-                   Please enable camera permissions in your browser settings to
-                   use the scanner.
+                   Por favor, activa los permisos de la cámara en la configuración del navegador para escanear.
                  </p>
                </div>
             )}
@@ -157,11 +156,11 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
 
         <div>
           <h3 className="text-lg font-semibold mb-4">
-            Attendance List: {summary[currentDay]}
+            Lista de participantes
           </h3>
           {participants.length === 0 && !isLoading ? (
             <p className="text-muted-foreground text-center py-8">
-              No participants found. Try seeding the database.
+              No se encontraron participantes, inicializa la base de datos.
             </p>
           ) : (
             <ScrollArea className="h-auto lg:h-[calc(100vh-20rem)]">

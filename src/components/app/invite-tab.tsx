@@ -43,7 +43,7 @@ export function InviteTab({ participants }: InviteTabProps) {
     try {
       await sendEmails(participants);
       toast({
-        title: "Invitations Sent!",
+        title: "¡Invitaciones enviadas!",
         description: `Successfully sent ${participants.length} email invitations.`,
       });
     } catch (error) {

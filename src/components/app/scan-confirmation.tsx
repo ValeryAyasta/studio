@@ -40,7 +40,7 @@ export function ScanConfirmation({ participant, onClose, onStatusChange, current
         <CardContent className="p-6 pt-0">
           <p className="text-center text-sm text-muted-foreground mb-6">
             <span className="font-semibold uppercase">{currentDay} </span>
-             Current status: <span className="font-semibold">{status}</span>
+            Estado actual: <span className="font-semibold">{status}</span>
           </p>
           <div className="grid grid-cols-2 gap-4">
             <Button
@@ -49,20 +49,20 @@ export function ScanConfirmation({ participant, onClose, onStatusChange, current
               disabled={status === 'Not Attended'}
             >
               <XCircle className="mr-2 h-4 w-4" />
-              Check-Out
+              Borrar
             </Button>
             <Button 
               onClick={() => onStatusChange('Attended')}
               disabled={status === 'Attended'}
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Check-In
+              Registrar
             </Button>
           </div>
         </CardContent>
         <CardFooter className="p-6 pt-0">
           <Button variant="ghost" onClick={onClose} className="w-full">
-            Cancel
+            Cancelar
           </Button>
         </CardFooter>
       </Card>

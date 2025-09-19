@@ -112,14 +112,12 @@ const scannedParticipant = scannedParticipantId
     if (participant) {
       setScannedParticipantId(participant.id);    } else {
       console.error(
-        'Failed to find participant. Scanned Value:',
-        scannedValue,
-        'Cleaned ID:',
-        cleanedId, 'in ', participants, '.'
+        'Error al encontrar al participante. Scanned Value:',
+        scannedValue
       );
       toast({
         title: 'Scan Error',
-        description: `No participant found for ID: ${cleanedId}`,
+        description: `No se encontró participante para el ID: ${cleanedId}`,
         variant: 'destructive',
       });
     }
@@ -174,7 +172,7 @@ const scannedParticipant = scannedParticipantId
           Control de Asistencia
         </h1>
         <p className="text-center text-gray-500 mb-6">
-          A starter for awesome apps.
+          Envío y escaneo de QRs
         </p>
 
         <div className="flex justify-center gap-4 mb-6">
@@ -197,11 +195,11 @@ const scannedParticipant = scannedParticipantId
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="scan">
               <QrCode className="w-4 h-4 mr-2" />
-              Scan
+              Escanear
             </TabsTrigger>
             <TabsTrigger value="invite">
               <Mail className="w-4 h-4 mr-2" />
-              Invite
+              Invitar
             </TabsTrigger>
           </TabsList>
           <TabsContent value="scan">
@@ -231,7 +229,7 @@ const scannedParticipant = scannedParticipantId
         <div className="absolute bottom-4 right-4">
           <Button variant="outline" size="icon" onClick={handleSeed}>
             <Database className="h-4 w-4" />
-            <span className="sr-only">Seed Database</span>
+            <span className="sr-only">Inicializar base de datos</span>
           </Button>
         </div>
       </div>

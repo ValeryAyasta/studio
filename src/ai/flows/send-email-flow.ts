@@ -66,7 +66,6 @@ Atentamente,<br></br> Presidente del Comité Técnico Consultivo (CTC) sobre Ges
 <br></br>
 AUTORIDAD PORTUARIA NACIONAL</p>
           <img src="${qrCodeDataUrl}" alt="Your QR Code" />
-          <p>See you there!</p>
         `;
 
         await transporter.sendMail({
