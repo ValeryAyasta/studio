@@ -63,12 +63,17 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
         const cameras = await Html5Qrcode.getCameras();
         if (cameras && cameras.length) {
           setHasCameraPermission(true);
+          const backCamera =
+        cameras.find((cam) =>
+          cam.label.toLowerCase().includes('back')
+        ) || cameras[0];
+
           if (
             scannerRef.current &&
             scannerRef.current.getState() !== Html5QrcodeScannerState.SCANNING
           ) {
             await scannerRef.current.start(
-              { facingMode: 'environment' },
+              backCamera.id,
               {
                 fps: 5,
                 qrbox: 
@@ -103,9 +108,14 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
 
     return () => {
       if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch((err) => {
+        scannerRef.current.stop().then(() => {
+          scannerRef.current?.clear();
+          scannerRef.current = null; // 👈 forzar recreación
+        })
+        .catch((err) => {
           console.error('Failed to stop scanner:', err);
         });
+  
       }
     };
   }, [isLoading, hasCameraPermission, onScanSuccess, toast]);

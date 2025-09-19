@@ -10,9 +10,6 @@ const FIREBASE_URL = 'https://studio-1109012300-d69eb-default-rtdb.firebaseio.co
 // This will be our in-memory cache for the participants, refreshed on each fetch.
 let participants: Participant[] = [];
 
-// Utility function to simulate network delay.
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 // --- Data Fetching Logic ---
 
 /**
