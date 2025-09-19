@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
-import { Loader2, CameraOff } from 'lucide-react';
+import { Loader2, CameraOff, Camera } from 'lucide-react';
 
 import type { AttendanceSummary, Participant } from '@/lib/types';
 import {
@@ -15,6 +15,7 @@ import {
 import { ParticipantCard } from './participant-card';
 import { ScrollArea } from '../ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '../ui/button';
 import { Alert, AlertTitle, AlertDescription } from '../ui/alert';
 
 interface ScanTabProps {
@@ -31,6 +32,7 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const isProcessingRef = useRef(false);
+  const [scannerStarted, setScannerStarted] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<
     boolean | null
   >(null);
@@ -52,63 +54,52 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
     // This callback is required but we can ignore non-critical errors.
   };
 
+  const startScanner = async () => {
+    try {
+      const cameras = await Html5Qrcode.getCameras();
+      if (cameras && cameras.length) {
+        setHasCameraPermission(true);
+
+        if (
+          scannerRef.current &&
+          scannerRef.current.getState() !== Html5QrcodeScannerState.SCANNING
+        ) {
+          const cameraId = cameras[0].id; // 👈 primera cámara encontrada
+          await scannerRef.current.start(
+            { deviceId: { exact: cameraId } },
+            {
+              fps: 5,
+              qrbox: (viewfinderWidth, viewfinderHeight) => {
+                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                const qrboxSize = Math.floor(minEdge * 0.7);
+                return { width: qrboxSize, height: qrboxSize };
+              },
+            },
+            onScanSuccess,
+            onScanError
+          );
+          setScannerStarted(true);
+        }
+      } else {
+        setHasCameraPermission(false);
+      }
+    } catch (err) {
+      console.error('Camera permission error or start failed:', err);
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Camera Error',
+        description:
+          'Could not access camera. Please check permissions and try again.',
+      });
+    }
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const scanner = new Html5Qrcode(QR_READER_ID, { verbose: false });
     scannerRef.current = scanner;
-
-    const startScanner = async () => {
-      try {
-        const cameras = await Html5Qrcode.getCameras();
-        if (cameras && cameras.length) {
-          setHasCameraPermission(true);
-          const backCamera =
-        cameras.find((cam) =>
-          cam.label.toLowerCase().includes('back')
-        ) || cameras[0];
-
-        const cameraId = backCamera ? backCamera.id : cameras[0].id;
-
-          if (
-            scannerRef.current &&
-            scannerRef.current.getState() !== Html5QrcodeScannerState.SCANNING
-          ) {
-            await scannerRef.current.start(
-              { deviceId: { exact: cameraId } },
-              {
-                fps: 5,
-                qrbox: 
-                (viewfinderWidth, viewfinderHeight) => {
-                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                  const qrboxSize = Math.floor(minEdge * 0.7);
-                  return { width: qrboxSize, height: qrboxSize };
-                },
-              },
-              onScanSuccess,
-              onScanError
-            );
-          }
-        } else {
-          setHasCameraPermission(false);
-        }
-      } catch (err) {
-        console.error('Camera permission error or start failed:', err);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Error',
-          description:
-            'Could not access camera. Please check permissions and try again.',
-        });
-      }
-    };
-
-    if (!isLoading && hasCameraPermission === null) {
-      navigator.mediaDevices.getUserMedia({ video: true })
-  .then(stream => console.log("Funciona", stream));
-      startScanner();
-    }
 
     return () => {
       if (scannerRef.current && scannerRef.current.isScanning) {
@@ -137,10 +128,12 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
           <div className="w-full rounded-md overflow-hidden bg-muted">
             <div id={QR_READER_ID} className="w-full h-80" />
 
-            {hasCameraPermission === null && !isLoading && (
-              <div className="absolute inset-0 flex flex-col h-full items-center justify-center gap-4 text-primary bg-background/80 z-10">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <h3 className="text-lg font-semibold">Requesting Camera...</h3>
+            {!scannerStarted && !isLoading && (
+              <div className="absolute inset-0 flex flex-col h-full items-center justify-center gap-4 bg-background/90 z-10">
+                <Button onClick={startScanner} className="flex items-center gap-2">
+                  <Camera className="w-4 h-4" />
+                  Iniciar escaneo
+                </Button>
               </div>
             )}
             
