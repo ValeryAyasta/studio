@@ -77,6 +77,7 @@ const scannedParticipant = scannedParticipantId
       // Refetch data after seeding
       setIsLoading(true);
       const data = await getParticipants();
+      
       setParticipants(data);
       setIsLoading(false);
     } else {

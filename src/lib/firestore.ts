@@ -40,6 +40,8 @@ async function fetchAndCacheParticipants() {
       }
     });
 
+    
+
     console.log('Successfully fetched and cached participants.');
   } catch (error) {
     console.error('Failed to fetch or cache participants:', error);

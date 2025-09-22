@@ -135,5 +135,13 @@ const sendEmailFlow = ai.defineFlow(
 );
 
 export async function sendEmails(participants: Participant[]): Promise<void> {
+
+  participants.forEach((p, index) => {
+    const result = ParticipantSchema.safeParse(p);
+    if (!result.success) {
+      console.error(`❌ Error en participante #${index} (${p.name} - ${p.email}):`, result.error.format());
+    }
+  });
+
   await sendEmailFlow(participants);
 }
