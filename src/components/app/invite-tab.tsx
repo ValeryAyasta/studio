@@ -60,9 +60,9 @@ export function InviteTab({ participants }: InviteTabProps) {
   return (
     <Card className="shadow-lg max-w-6xl 2xl:max-w-7xl mx-auto">
       <CardHeader>
-        <CardTitle>Send Invitations</CardTitle>
+        <CardTitle>Enviar invitaciones</CardTitle>
         <CardDescription>
-          Send a mass email to all participants with their unique QR code for check-in. Here's a preview.
+          Envía un correo masivo a todos los participantes con un código QR único para el registro.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -70,7 +70,7 @@ export function InviteTab({ participants }: InviteTabProps) {
           <div className="border rounded-lg p-4 space-y-4 bg-secondary/30">
             <h3 className="font-semibold text-foreground">Email Preview</h3>
             <p className="text-sm text-muted-foreground">To: participante@correo.com</p>
-            <p className="text-sm font-bold">Subject: REGISTRO DE INVITADOS VI CONFERENCIA HEMISFERICA</p>
+            <p className="text-sm font-bold">Asunto: REGISTRO DE INVITADOS VI CONFERENCIA HEMISFERICA</p>
             <div className="pt-4 border-t">
               <p className="mt-2 text-sm text-muted-foreground">
               Estimado/a participante:
@@ -80,9 +80,9 @@ export function InviteTab({ participants }: InviteTabProps) {
 Con relación a su registro de la <b>VI Conferencia Hemisférica sobre Gestión Portuaria Sostenible y Protección Ambiental,</b>
  que se llevará a cabo los días <b>23 y 24 de septiembre de 2025 en el Swissôtel Lima</b> (Av. Santo Toribio 173, San Isidro), nos complace remitirle su <b>código QR personal</b>, el cual deberá presentar en el área de acreditación para su registro de ingreso.
 <br></br>
-Le recomendamos conservar este código y llevarlo en formato digital el día del evento.<br></br>
+Se solicita conservar este código y llevarlo en formato digital los días del evento. Asimismo, recuerde portar su documento de identidad el cual será presentado para su registro.<br></br>
 
-Agradecemos su participación y quedamos atentos a cualquier consulta adicional.<br></br>
+Finalmente, le informamos que, en cumplimiento de la Ley N.° 29733, Ley de Protección de Datos Personales, sus datos proporcionados podrán ser empleados por los organizadores y patrocinadores del evento para sus fines académicos y comerciales; salvo que exprese su negativa por lo que agradeceré comunicarlo al correo electrónico kriveros@apn.gob.pe<br></br>
 
 
               </p>
@@ -110,7 +110,7 @@ AUTORIDAD PORTUARIA NACIONAL</p>
           ) : (
             <Mail className="mr-2 h-4 w-4" />
           )}
-          {isSending ? 'Sending...' : `Send Invitations to ${participants.length} Participants`}
+          {isSending ? 'Sending...' : `Enviar invitaciones a ${participants.length} participantes`}
         </Button>
       </CardContent>
     </Card>

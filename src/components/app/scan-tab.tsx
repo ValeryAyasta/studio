@@ -37,6 +37,7 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
     boolean | null
   >(null);
   const { toast } = useToast();
+  
 
   const onScanSuccess = useCallback(
     (decodedText: string) => {

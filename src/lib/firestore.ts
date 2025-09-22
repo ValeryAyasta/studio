@@ -100,7 +100,7 @@ export async function updateParticipantStatus(
     });
 
     // 3. Guardar el resumen
-    await fetch(`${FIREBASE_URL}/attendanceSummary.json`, {
+    await fetch(`https://studio-1109012300-d69eb-default-rtdb.firebaseio.com/attendanceSummary.json`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ day1: day1Count, day2: day2Count }),
