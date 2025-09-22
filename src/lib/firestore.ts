@@ -60,6 +60,41 @@ export async function getParticipants(): Promise<Participant[]> {
   return JSON.parse(JSON.stringify(participants));
 }
 
+export async function updateParticipantEmail(id: string, newEmail: string) {
+  console.log(`Updating participant email`);
+
+  const participantIndex = participants.findIndex((p) => p.id === id);
+  
+  if (participantIndex === -1) {
+    console.error(`Participant with id ${id} not found in cache.`);
+    // This can happen if getParticipants hasn't been called yet for some reason.
+    return { success: false, error: `Participant ${id} not found in memory. Try reloading.` };
+  }
+  
+  try {
+    const res = await fetch(
+      `https://studio-1109012300-d69eb-default-rtdb.firebaseio.com/participants/${participantIndex}.json`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: newEmail }),
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`Error actualizando email: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("Error en updateParticipantEmail:", err);
+    throw err;
+  }
+}
+
 export async function updateParticipantStatus(
   id: string,
   day: "day1" | "day2",
