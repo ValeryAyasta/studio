@@ -208,7 +208,7 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
                 {participants
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map((p) => (
-                    <ParticipantCard key={p.email} participant={p} currentDay={currentDay} />
+                    <ParticipantCard key={p.name} participant={p} currentDay={currentDay} />
                   ))}
               </div>
             </ScrollArea>
