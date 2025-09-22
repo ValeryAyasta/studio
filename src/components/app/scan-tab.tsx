@@ -33,11 +33,34 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
   const videoRef = useRef<HTMLVideoElement>(null);
   const isProcessingRef = useRef(false);
   const [scannerStarted, setScannerStarted] = useState(false);
+  const [currentCameraId, setCurrentCameraId] = useState<string | null>(null);
+
   const [hasCameraPermission, setHasCameraPermission] = useState<
     boolean | null
   >(null);
   const { toast } = useToast();
+
+  const switchCamera = async () => {
+    if (!scannerRef.current) return;
+    const cameras = await Html5Qrcode.getCameras();
+    if (cameras.length < 2) return;
   
+    const nextCamera = cameras.find(cam => cam.id !== currentCameraId) || cameras[0];
+  
+    if (scannerRef.current.getState() === Html5QrcodeScannerState.SCANNING) {
+      await scannerRef.current.stop();
+      await new Promise(res => setTimeout(res, 200));
+    }
+
+    await scannerRef.current.start(
+      { deviceId: { exact: nextCamera.id } },
+      { fps: 5, qrbox: 250 },
+      onScanSuccess,
+      onScanError
+    );
+  
+    setCurrentCameraId(nextCamera.id);
+  };
 
   const onScanSuccess = useCallback(
     (decodedText: string) => {
@@ -152,7 +175,23 @@ export function ScanTab({ participants, onScan, isLoading, currentDay, summary }
                  </p>
                </div>
             )}
+
+            
+
           </div>
+          {scannerStarted && hasCameraPermission && (
+              <div className="mt-4">
+                <Button
+                  onClick={switchCamera}
+                  size="sm"
+                  variant="secondary"
+                  className="flex items-center gap-2"
+                >
+                  <Camera className="w-4 h-4" />
+                  Cambiar cámara
+                </Button>
+              </div>
+            )}
         </div>
 
         <div>
